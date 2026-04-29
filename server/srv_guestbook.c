@@ -7,19 +7,14 @@
 #include <poll.h>
 #include "../include/iwakura_net.h"
 
-const char* get_env_str(const char* key, const char* fallback) {
-    const char *val = getenv(key);
-    return val ? val : fallback;
-}
-
 void send_webpage(int socket, int is_success) {
     char html[4096];
 
-    const char* title = get_env_str("GB_TITLE", "Iwakura Guestbook");
-    const char* heading = get_env_str("GB_HEADING", "Transmit data to HUD");
-    const char* bg = get_env_str("GB_BG_COLOR", "#000000");
-    const char* fg = get_env_str("GB_FG_COLOR", "#00ff00");
-    const char* btn = get_env_str("GB_BTN_COLOR", "#222222");
+    const char* title = getenv("GB_TITLE");
+    const char* heading = getenv("GB_HEADING");
+    const char* bg = getenv("GB_BG_COLOR");
+    const char* fg = getenv("GB_FG_COLOR");
+    const char* btn = getenv("GB_BTN_COLOR");
 
     const char* content = is_success ?
         "<div class='thanks'><h2>Transmisión recibida.</h2><p>El mensaje ha sido inyectado en el HUD.</p></div>" :
@@ -56,8 +51,7 @@ void decode_url(char *src, char *dest) {
 }
 
 void get_log_path(char *path) {
-    char *home = getenv("HOME");
-    snprintf(path, 256, "%s/visitas.txt", home ? home : ".");
+    snprintf(path, 256, "%s/visitas.txt", getenv("HOME"));
 }
 
 void log_message(char *body) {
@@ -113,8 +107,7 @@ void push_random_message_to_hub() {
 
 int main() {
     srand(time(NULL));
-    const char *p = getenv("GUESTBOOK_PORT");
-    int http_port = p ? atoi(p) : 9090;
+    int http_port = get_guestbook_port();
 
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     int opt = 1;
