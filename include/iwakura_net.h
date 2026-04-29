@@ -84,4 +84,9 @@ static inline void net_fetch_from_hub(iwakura_req_t target, char* buffer, const 
     close(sock);
 }
 
+static inline const char* _t(const char* key, const char* fallback) {
+    const char* val = getenv(key);
+    return (val && strlen(val) > 0) ? val : fallback;
+}
+
 #endif
