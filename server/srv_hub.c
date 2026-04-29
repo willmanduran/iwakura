@@ -4,9 +4,19 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <poll.h>
+#include <signal.h>
 #include "../include/iwakura_net.h"
 
 char state_table[10][MAX_PAYLOAD];
+int server_fd;
+
+void handle_shutdown(int sig) {
+    printf("\n[HUB] Caught signal %d. Releasing port and shutting down...\n", sig);
+    if (server_fd >= 0) {
+        close(server_fd);
+    }
+    exit(0);
+}
 
 void handle_client(int fd) {
     iwakura_msg_t msg;
@@ -36,8 +46,11 @@ void handle_client(int fd) {
 }
 
 int main() {
+    signal(SIGINT, handle_shutdown);
+    signal(SIGTERM, handle_shutdown);
+
     int port = get_iwakura_port();
-    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
 
     struct sockaddr_in addr = { .sin_family = AF_INET, .sin_addr.s_addr = INADDR_ANY, .sin_port = htons(port) };
 
