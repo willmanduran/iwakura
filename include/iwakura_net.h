@@ -11,15 +11,23 @@
 #define MAX_PAYLOAD 1024
 
 static inline int get_iwakura_port() {
-    return atoi(getenv("IWAKURA_PORT"));
+    const char* val = getenv("DASH_PORT");
+    return (val && strlen(val) > 0) ? atoi(val) : 8888;
 }
 
 static inline const char* get_iwakura_host() {
-    return getenv("IWAKURA_HOST");
+    const char* val = getenv("DASH_HOST");
+    return (val && strlen(val) > 0) ? val : "127.0.0.1";
 }
 
 static inline int get_guestbook_port() {
-    return atoi(getenv("GUESTBOOK_PORT"));
+    const char* val = getenv("GUESTBOOK_PORT");
+    return (val && strlen(val) > 0) ? atoi(val) : 8890;
+}
+
+static inline int get_orchestrator_port() {
+    const char* val = getenv("ORCH_PORT");
+    return (val && strlen(val) > 0) ? atoi(val) : 8889;
 }
 
 typedef enum {
@@ -39,6 +47,11 @@ typedef struct {
     uint32_t payload_len;
     char payload[MAX_PAYLOAD];
 } iwakura_msg_t;
+
+static inline const char* _t(const char* key, const char* fallback) {
+    const char* val = getenv(key);
+    return (val && strlen(val) > 0) ? val : fallback;
+}
 
 static inline void net_push_to_hub(iwakura_req_t target, const char* payload) {
     int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -84,9 +97,22 @@ static inline void net_fetch_from_hub(iwakura_req_t target, char* buffer, const 
     close(sock);
 }
 
-static inline const char* _t(const char* key, const char* fallback) {
-    const char* val = getenv(key);
-    return (val && strlen(val) > 0) ? val : fallback;
+static inline void net_push_to_orchestrator(const char* payload) {
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock < 0) return;
+
+    struct sockaddr_in orch_addr = {
+        .sin_family = AF_INET,
+        .sin_port = htons(get_orchestrator_port())
+    };
+
+    const char* host = get_iwakura_host();
+    if (!host || strlen(host) == 0) host = "127.0.0.1";
+
+    inet_pton(AF_INET, host, &orch_addr.sin_addr);
+
+    sendto(sock, payload, strlen(payload), 0, (struct sockaddr *)&orch_addr, sizeof(orch_addr));
+    close(sock);
 }
 
 #endif
