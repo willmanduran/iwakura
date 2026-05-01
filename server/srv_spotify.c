@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 #include <curl/curl.h>
 #include <json-c/json.h>
 #include <time.h>
@@ -30,7 +29,12 @@ void refresh_token() {
     const char *client_secret = getenv("SPOTIFY_CLIENT_SECRET");
     const char *refresh = getenv("SPOTIFY_REFRESH_TOKEN");
 
-    if (!client_id || !client_secret || !refresh) return;
+    if (!client_id || !client_secret || !refresh) {
+        printf("[SPOTIFY] Missing credentials in .env!\n");
+        return;
+    }
+
+    printf("[SPOTIFY] Requesting new access token...\n");
 
     CURL *curl = curl_easy_init();
     if (!curl) return;
@@ -49,18 +53,24 @@ void refresh_token() {
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &b);
 
-    if (curl_easy_perform(curl) == CURLE_OK && b.data) {
-        struct json_object *j = json_tokener_parse(b.data);
-        if (j) {
-            struct json_object *tok, *exp;
-            if (json_object_object_get_ex(j, "access_token", &tok)) {
-                snprintf(access_token, sizeof(access_token), "%s", json_object_get_string(tok));
-                if (json_object_object_get_ex(j, "expires_in", &exp)) {
-                    token_expires = time(NULL) + json_object_get_int(exp) - 60;
-                    printf("[SPOTIFY] Token refreshed.\n");
+    long http_code = 0;
+    if (curl_easy_perform(curl) == CURLE_OK) {
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+        if (http_code == 200 && b.data) {
+            struct json_object *j = json_tokener_parse(b.data);
+            if (j) {
+                struct json_object *tok, *exp;
+                if (json_object_object_get_ex(j, "access_token", &tok)) {
+                    snprintf(access_token, sizeof(access_token), "%s", json_object_get_string(tok));
+                    printf("[SPOTIFY] Token refreshed successfully.\n");
+                    if (json_object_object_get_ex(j, "expires_in", &exp)) {
+                        token_expires = time(NULL) + json_object_get_int(exp) - 60;
+                    }
                 }
+                json_object_put(j);
             }
-            json_object_put(j);
+        } else {
+            printf("[SPOTIFY] Auth Failed! HTTP %ld: %s\n", http_code, b.data ? b.data : "No response");
         }
     }
     curl_easy_cleanup(curl);
@@ -90,7 +100,8 @@ void fetch_currently_playing() {
     long http_code = 0;
     if (curl_easy_perform(curl) == CURLE_OK) {
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-        char payload[MAX_PAYLOAD] = "0|Nada|Silencio|0|1";
+        char payload[MAX_PAYLOAD];
+        snprintf(payload, MAX_PAYLOAD, "0|%s|%s|0|1", _t("L_MUSIC_NOTHING", "No track selected"), _t("L_MUSIC_SILENCE", "Stopped"));
 
         if (http_code == 200 && b.data && strlen(b.data) > 0) {
             struct json_object *j = json_tokener_parse(b.data);
@@ -111,25 +122,18 @@ void fetch_currently_playing() {
                              json_object_get_string(track_name),
                              json_object_get_int(prog),
                              json_object_get_int(dur));
+
+                    printf("[SPOTIFY] Playing: %s - %s\n", json_object_get_string(artist_name), json_object_get_string(track_name));
                 }
                 json_object_put(j);
             }
+        } else if (http_code == 204) {
+            printf("[SPOTIFY] HTTP 204: No active playback detected by Spotify.\n");
+        } else {
+            printf("[SPOTIFY] HTTP %ld Error.\n", http_code);
         }
 
-        int sock = socket(AF_INET, SOCK_STREAM, 0);
-        struct sockaddr_in hub_addr = { .sin_family = AF_INET, .sin_port = htons(get_iwakura_port()) };
-        inet_pton(AF_INET, get_iwakura_host(), &hub_addr.sin_addr);
-
-        if (connect(sock, (struct sockaddr *)&hub_addr, sizeof(hub_addr)) == 0) {
-            iwakura_msg_t msg;
-            memset(&msg, 0, sizeof(msg));
-            msg.type = UPDATE_DATA;
-            msg.target_type = REQ_SPOTIFY;
-            snprintf(msg.payload, MAX_PAYLOAD, "%s", payload);
-            msg.payload_len = strlen(msg.payload);
-            send(sock, &msg, sizeof(msg), 0);
-        }
-        close(sock);
+        net_push_to_hub(REQ_SPOTIFY, payload);
     }
 
     curl_slist_free_all(headers);
@@ -139,11 +143,11 @@ void fetch_currently_playing() {
 
 int main() {
     curl_global_init(CURL_GLOBAL_DEFAULT);
-    printf("Spotify Provider starting...\n");
+    printf("[SPOTIFY] Provider starting...\n");
 
     while (1) {
         fetch_currently_playing();
-        sleep(2);
+        sleep(6);
     }
 
     curl_global_cleanup();
