@@ -45,8 +45,8 @@ srv_news: server/srv_news.c
 pan_news: panels/pan_news.c
 	$(CC) $(CFLAGS) -o pan_news panels/pan_news.c
 
-orch_main: orchestrator/main.c
-	$(CC) $(CFLAGS) -o orch_main orchestrator/main.c
+orch_main: main.c orchestrator/network.c orchestrator/router.c frontends/tui_frontend.c
+	$(CC) $(CFLAGS) -o orch_main main.c orchestrator/network.c orchestrator/router.c frontends/tui_frontend.c
 
 clean:
 	rm -f srv_hub srv_clock srv_guestbook srv_weather srv_spotify srv_lastfm srv_calendar pan_guestbook pan_music pan_calendar pan_clock pan_weather srv_news pan_news orch_main
