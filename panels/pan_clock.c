@@ -10,10 +10,16 @@ int main() {
     while (1) {
         net_fetch_from_hub(REQ_CLOCK, raw_data, "--:--|Syncing...");
 
-        snprintf(display_frame, MAX_PAYLOAD, "CLOCK|%s", raw_data);
+        char *time_str = strtok(raw_data, "|");
+        char *date_str = strtok(NULL, "|");
+
+        if (time_str && date_str) {
+            snprintf(display_frame, MAX_PAYLOAD, "CLOCK|\033[1;32m%s\033[0m \033[1;30m|\033[0m %s                                        ", time_str, date_str);
+        } else {
+            snprintf(display_frame, MAX_PAYLOAD, "CLOCK|Syncing...                                        ");
+        }
 
         net_push_to_orchestrator(display_frame);
-
         sleep(1);
     }
 
