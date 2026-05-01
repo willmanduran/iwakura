@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 #include <curl/curl.h>
 #include <time.h>
 #include "../include/iwakura_net.h"
@@ -128,29 +127,14 @@ void fetch_and_push_calendar() {
     if (strlen(final_payload) > 3) {
         final_payload[strlen(final_payload) - 3] = '\0';
     } else {
-        strcpy(final_payload, "Sistema libre de compromisos.");
+        strcpy(final_payload, _t("L_CAL_EMPTY", "No events scheduled for today."));
     }
 
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    struct sockaddr_in hub_addr = { .sin_family = AF_INET, .sin_port = htons(get_iwakura_port()) };
-    inet_pton(AF_INET, get_iwakura_host(), &hub_addr.sin_addr);
-
-    if (connect(sock, (struct sockaddr *)&hub_addr, sizeof(hub_addr)) == 0) {
-        iwakura_msg_t msg;
-        memset(&msg, 0, sizeof(msg));
-        msg.type = UPDATE_DATA;
-        msg.target_type = REQ_CAL;
-        snprintf(msg.payload, MAX_PAYLOAD, "%s", final_payload);
-        msg.payload_len = strlen(msg.payload);
-        send(sock, &msg, sizeof(msg), 0);
-        printf("[CAL] Pushed: %s\n", msg.payload);
-    }
-    close(sock);
+    net_push_to_hub(REQ_CAL, final_payload);
 }
 
 int main() {
     curl_global_init(CURL_GLOBAL_DEFAULT);
-    printf("[CAL] Calendar + Todo Provider Active...\n");
     while (1) {
         fetch_and_push_calendar();
         sleep(600);
