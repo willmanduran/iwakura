@@ -12,24 +12,26 @@ int main() {
         net_fetch_from_hub(REQ_WEATHER, raw_data, "0|0|0|0|0");
 
         char *t = strtok(raw_data, "|");
-        char *f = strtok(NULL, "|");
-        char *w = strtok(NULL, "|");
+        char *f = t ? strtok(NULL, "|") : NULL;
+        char *w = f ? strtok(NULL, "|") : NULL;
 
         if (t && f && w) {
             snprintf(display_frame, MAX_PAYLOAD,
                 "WEATHER|"
-                "\033[0;36m%s\033[0m\n"
-                "Temp:  %s°C\n"
-                "Feels: %s°C\n"
-                "Wind:  %s km/h",
+                "\033[0;36m%s\033[0m                                        \n"
+                "Temp:  %s°C                                        \n"
+                "Feels: %s°C                                        \n"
+                "Wind:  %s km/h                                     ",
                 _t("L_WX_WEATHER", "WEATHER"), t, f, w);
         } else {
-            snprintf(display_frame, MAX_PAYLOAD, "WEATHER|Updating...");
+            snprintf(display_frame, MAX_PAYLOAD,
+                "WEATHER|"
+                "WEATHER                                        \n"
+                "Updating weather...                            ");
         }
 
         net_push_to_orchestrator(display_frame);
-
-        sleep(15);
+        sleep(2);
     }
     return 0;
 }
