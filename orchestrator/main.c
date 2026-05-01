@@ -9,7 +9,7 @@
 int server_sock = -1;
 
 void handle_shutdown(int sig) {
-    printf("\n\033[?25h\033[0m");
+    printf("\n\033[?25h\033[?7h\033[0m");
     printf("\n[ORCHESTRATOR] Caught signal %d. Releasing port and shutting down...\n", sig);
     if (server_sock >= 0) {
         close(server_sock);
@@ -17,14 +17,21 @@ void handle_shutdown(int sig) {
     exit(0);
 }
 
-void draw_clock(char *payload) {
-    char *time_str = strtok(payload, "|");
-    char *date_str = strtok(NULL, "|");
+void draw_widget(int start_x, int start_y, char *payload) {
+    int cx = start_x;
+    int cy = start_y;
 
-    if (time_str && date_str) {
-        printf("\033[2;4H\033[1;32m%s\033[0m \033[0;90m│ %s\033[0m\033[K", time_str, date_str);
-        fflush(stdout);
+    printf("\033[%d;%dH", cy, cx);
+
+    for (int i = 0; payload[i] != '\0'; i++) {
+        if (payload[i] == '\n') {
+            cy++;
+            printf("\033[%d;%dH", cy, cx);
+        } else {
+            putchar(payload[i]);
+        }
     }
+    fflush(stdout);
 }
 
 int main() {
@@ -52,20 +59,35 @@ int main() {
         return 1;
     }
 
-    printf("\033[2J\033[?25l");
+    printf("\033[2J\033[?25l\033[?7l");
     fflush(stdout);
 
-    char buffer[MAX_PAYLOAD];
+    char buffer[8192];
     struct sockaddr_in client_addr;
     socklen_t len = sizeof(client_addr);
 
     while (1) {
-        int n = recvfrom(server_sock, buffer, MAX_PAYLOAD - 1, 0, (struct sockaddr *)&client_addr, &len);
+        int n = recvfrom(server_sock, buffer, sizeof(buffer) - 1, 0, (struct sockaddr *)&client_addr, &len);
         if (n > 0) {
             buffer[n] = '\0';
 
             if (strncmp(buffer, "CLOCK|", 6) == 0) {
-                draw_clock(buffer + 6);
+                draw_widget(4, 2, buffer + 6);
+            }
+            else if (strncmp(buffer, "WEATHER|", 8) == 0) {
+                draw_widget(4, 4, buffer + 8);
+            }
+            else if (strncmp(buffer, "GUESTBOOK|", 10) == 0) {
+                draw_widget(4, 10, buffer + 10);
+            }
+            else if (strncmp(buffer, "NEWS|", 5) == 0) {
+                draw_widget(48, 2, buffer + 5);
+            }
+            else if (strncmp(buffer, "CALENDAR|", 9) == 0) {
+                draw_widget(48, 16, buffer + 9);
+            }
+            else if (strncmp(buffer, "MUSIC|", 6) == 0) {
+                draw_widget(4, 24, buffer + 6);
             }
         }
     }
