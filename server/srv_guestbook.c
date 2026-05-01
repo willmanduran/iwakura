@@ -16,9 +16,9 @@ void send_webpage(int socket, int is_success) {
     const char* fg = getenv("GB_FG_COLOR");
     const char* btn = getenv("GB_BTN_COLOR");
 
-    const char* content = is_success ?
-        "<div class='thanks'><h2>Transmisión recibida.</h2><p>El mensaje ha sido inyectado en el HUD.</p></div>" :
-        "<form method='POST'><input name='n' placeholder='Identificador' required autocomplete='off'><textarea name='m' rows='5' placeholder='Mensaje...' required></textarea><button type='submit'>Transmitir</button></form>";
+const char* content = is_success ?
+        _t("L_GB_SUCCESS", "<div class='thanks'><h2>Message Sent</h2><p>Your message has been posted.</p></div>") :
+        _t("L_GB_FORM", "<form method='POST'><input name='n' placeholder='Your Name' required autocomplete='off'><textarea name='m' rows='5' placeholder='Write a message...' required></textarea><button type='submit'>Send Message</button></form>");
 
     snprintf(html, sizeof(html),
         "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n"
@@ -51,7 +51,7 @@ void decode_url(char *src, char *dest) {
 }
 
 void get_log_path(char *path) {
-    snprintf(path, 256, "%s/visitas.txt", getenv("HOME"));
+    snprintf(path, 256, "%s/.iwakura/guestbook.txt", getenv("HOME"));
 }
 
 void log_message(char *body) {
@@ -67,7 +67,6 @@ void log_message(char *body) {
                     t->tm_mday, t->tm_mon + 1, t->tm_year % 100,
                     t->tm_hour, t->tm_min, clean_n, clean_m);
             fclose(f);
-            printf("[GUESTBOOK] New entry saved: %s\n", clean_n);
         }
     }
 }
@@ -88,21 +87,7 @@ void push_random_message_to_hub() {
     if (count == 0) return;
     int r = rand() % count;
 
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    struct sockaddr_in hub_addr = { .sin_family = AF_INET, .sin_port = htons(get_iwakura_port()) };
-    inet_pton(AF_INET, get_iwakura_host(), &hub_addr.sin_addr);
-
-    if (connect(sock, (struct sockaddr *)&hub_addr, sizeof(hub_addr)) == 0) {
-        iwakura_msg_t msg;
-        memset(&msg, 0, sizeof(msg));
-        msg.type = UPDATE_DATA;
-        msg.target_type = REQ_GUESTBOOK;
-        snprintf(msg.payload, MAX_PAYLOAD, "%s", lines[r]);
-        msg.payload_len = strlen(msg.payload);
-        send(sock, &msg, sizeof(msg), 0);
-        printf("[GUESTBOOK] Pushed to Hub: %s\n", msg.payload);
-    }
-    close(sock);
+    net_push_to_hub(REQ_GUESTBOOK, lines[r]);
 }
 
 int main() {
@@ -116,8 +101,6 @@ int main() {
     struct sockaddr_in address = { .sin_family = AF_INET, .sin_addr.s_addr = INADDR_ANY, .sin_port = htons(http_port) };
     bind(server_fd, (struct sockaddr *)&address, sizeof(address));
     listen(server_fd, 5);
-
-    printf("Guestbook HTTP Server active on port %d...\n", http_port);
 
     struct pollfd fds[1];
     fds[0].fd = server_fd;
