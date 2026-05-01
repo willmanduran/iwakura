@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -O2
 
-all: hub clock_provider guestbook weather srv_spotify srv_lastfm srv_calendar pan_guestbook pan_music pan_calendar pan_clock pan_weather srv_news pan_news orch_main
+all: hub clock_provider guestbook weather srv_spotify srv_lastfm srv_calendar pan_guestbook pan_music pan_calendar pan_clock pan_weather srv_news pan_news orch_main launcher
 
 hub: server/srv_hub.c
 	$(CC) $(CFLAGS) -o srv_hub server/srv_hub.c
@@ -48,5 +48,8 @@ pan_news: panels/pan_news.c
 orch_main: main.c orchestrator/network.c orchestrator/router.c frontends/tui_frontend.c
 	$(CC) $(CFLAGS) -o orch_main main.c orchestrator/network.c orchestrator/router.c frontends/tui_frontend.c
 
+launcher: launcher.c
+	$(CC) $(CFLAGS) -o launcher launcher.c
+
 clean:
-	rm -f srv_hub srv_clock srv_guestbook srv_weather srv_spotify srv_lastfm srv_calendar pan_guestbook pan_music pan_calendar pan_clock pan_weather srv_news pan_news orch_main
+	rm -f srv_hub srv_clock srv_guestbook srv_weather srv_spotify srv_lastfm srv_calendar pan_guestbook pan_music pan_calendar pan_clock pan_weather srv_news pan_news orch_main launcher
