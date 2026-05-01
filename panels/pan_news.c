@@ -1,54 +1,38 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 #include "../include/iwakura_net.h"
 
 int main() {
-    char payload[MAX_PAYLOAD];
-    printf("\033[2J\033[?25l");
+    char raw_data[MAX_PAYLOAD];
+    char display_frame[4096];
 
     while (1) {
-        int sock = socket(AF_INET, SOCK_STREAM, 0);
-        struct sockaddr_in hub_addr = { .sin_family = AF_INET, .sin_port = htons(get_iwakura_port()) };
-        inet_pton(AF_INET, get_iwakura_host(), &hub_addr.sin_addr);
+        net_fetch_from_hub(REQ_NEWS, raw_data, _t("L_NEWS_SEARCH", "Loading news feed..."));
 
-        strcpy(payload, "Buscando frecuencias RSS...");
+        strcpy(display_frame, "NEWS|");
+        char header[256];
+        snprintf(header, sizeof(header), "\033[0;90m┌── %-56.56s ┐\033[0m\n", _t("L_NEWS_HEADER", "NEWS"));
+        strcat(display_frame, header);
 
-        if (connect(sock, (struct sockaddr *)&hub_addr, sizeof(hub_addr)) == 0) {
-            iwakura_msg_t msg;
-            memset(&msg, 0, sizeof(msg));
-            msg.type = REQ_NEWS;
-            send(sock, &msg, sizeof(msg), 0);
-            if (recv(sock, &msg, sizeof(msg), 0) > 0 && strlen(msg.payload) > 0) {
-                strcpy(payload, msg.payload);
-            }
-        }
-        close(sock);
-
-        printf("\033[H\n");
-        printf("\033[0;90m┌── NOTICIAS ────────────────────────────────────────────────────────────┐\033[0m\n\n");
-
-        char *token = strtok(payload, "|");
+        char *token = strtok(raw_data, "|");
         int count = 0;
-        while (token && count < 15) {
-            char line[128];
-            if (strlen(token) > 67) {
-                snprintf(line, sizeof(line), "%.67s...", token);
-            } else {
-                snprintf(line, sizeof(line), "%s", token);
-            }
 
-            printf(" \033[0;90m»\033[0m %s\033[K\n", line);
+        while (token && count < 10) {
+            char line[512];
+            snprintf(line, sizeof(line), " \033[0;90m»\033[0m %-60.60s \n", token);
+
+            if (strlen(display_frame) + strlen(line) < sizeof(display_frame) - 200) {
+                strcat(display_frame, line);
+            }
             token = strtok(NULL, "|");
             count++;
         }
 
-        printf("\n\033[0;90m└────────────────────────────────────────────────────────────────────────┘\033[0m\n");
-        fflush(stdout);
+        strcat(display_frame, "\033[0;90m└──────────────────────────────────────────────────────────┘\033[0m");
 
-        sleep(10);
+        net_push_to_orchestrator(display_frame);
+        sleep(2);
     }
     return 0;
 }
