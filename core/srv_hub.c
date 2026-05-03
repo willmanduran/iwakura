@@ -27,6 +27,8 @@ void handle_client(int fd) {
         return;
     }
 
+    msg.payload[MAX_PAYLOAD - 1] = '\0';
+
     printf("[HUB] Received %d bytes. Type requested: %d\n", bytes, msg.type);
 
     if (msg.type == UPDATE_DATA) {
