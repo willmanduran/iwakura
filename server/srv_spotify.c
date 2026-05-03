@@ -107,12 +107,12 @@ void fetch_currently_playing() {
     if (curl_easy_perform(curl) == CURLE_OK) {
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
         char payload[MAX_PAYLOAD];
-        snprintf(payload, MAX_PAYLOAD, "0|%s|%s|0|1", _t("L_MUSIC_NOTHING", "No track selected"), _t("L_MUSIC_SILENCE", "Stopped"));
+        snprintf(payload, MAX_PAYLOAD, "0|%s|%s|0|1|none", _t("L_MUSIC_NOTHING", "No track selected"), _t("L_MUSIC_SILENCE", "Stopped"));
 
         if (http_code == 200 && b.data && strlen(b.data) > 0) {
             struct json_object *j = json_tokener_parse(b.data);
             if (j) {
-                struct json_object *item, *artists, *first_artist, *artist_name, *track_name, *is_playing, *prog, *dur;
+                struct json_object *item, *album, *images, *first_image, *url, *artists, *first_artist, *artist_name, *track_name, *is_playing, *prog, *dur;
                 if (json_object_object_get_ex(j, "item", &item) && !json_object_is_type(item, json_type_null)) {
                     json_object_object_get_ex(j, "is_playing", &is_playing);
                     json_object_object_get_ex(j, "progress_ms", &prog);
@@ -122,12 +122,23 @@ void fetch_currently_playing() {
                     first_artist = json_object_array_get_idx(artists, 0);
                     json_object_object_get_ex(first_artist, "name", &artist_name);
 
-                    snprintf(payload, MAX_PAYLOAD, "%d|%s|%s|%d|%d",
+                    const char *image_url_str = "none";
+                    if (json_object_object_get_ex(item, "album", &album)) {
+                        if (json_object_object_get_ex(album, "images", &images) && json_object_array_length(images) > 0) {
+                            first_image = json_object_array_get_idx(images, 0);
+                            if (json_object_object_get_ex(first_image, "url", &url)) {
+                                image_url_str = json_object_get_string(url);
+                            }
+                        }
+                    }
+
+                    snprintf(payload, MAX_PAYLOAD, "%d|%s|%s|%d|%d|%s",
                              json_object_get_boolean(is_playing) ? 1 : 0,
                              json_object_get_string(artist_name),
                              json_object_get_string(track_name),
                              json_object_get_int(prog),
-                             json_object_get_int(dur));
+                             json_object_get_int(dur),
+                             image_url_str);
 
                     printf("[SPOTIFY] Playing: %s - %s\n", json_object_get_string(artist_name), json_object_get_string(track_name));
                 }
