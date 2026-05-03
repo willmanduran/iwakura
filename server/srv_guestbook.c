@@ -57,7 +57,7 @@ void get_log_path(char *path) {
 void log_message(char *body) {
     char raw_n[128] = {0}, raw_m[512] = {0}, clean_n[128] = {0}, clean_m[512] = {0};
     char path[256]; get_log_path(path);
-    if (sscanf(body, "n=%[^&]&m=%s", raw_n, raw_m) >= 1) {
+    if (sscanf(body, "n=%127[^&]&m=%511s", raw_n, raw_m) >= 1) {
         decode_url(raw_n, clean_n); decode_url(raw_m, clean_m);
         FILE *f = fopen(path, "a");
         if (f) {
