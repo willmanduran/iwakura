@@ -137,6 +137,7 @@ SPOTIFY_REFRESH_TOKEN=""
 LASTFM_API_KEY=""
 LASTFM_USER=""
 LASTFM_DISPLAY_NAME=""
+LASTFM_PERIOD="7day"
 
 CAL_URL="http://ip:port/username/calname/"
 CAL_USER=""
