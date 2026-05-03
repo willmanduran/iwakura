@@ -35,6 +35,15 @@ static inline int get_frontend_port() {
     return (val && strlen(val) > 0) ? atoi(val) : 8891;
 }
 
+static inline int get_refresh_rate(const char* key, int fallback) {
+    const char* val = getenv(key);
+    if (val && strlen(val) > 0) {
+        int parsed = atoi(val);
+        if (parsed > 0) return parsed;
+    }
+    return fallback;
+}
+
 typedef enum {
     REQ_CLOCK = 0,
     REQ_WEATHER,
