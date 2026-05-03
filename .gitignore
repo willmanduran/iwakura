@@ -56,3 +56,5 @@ dkms.conf
 
 #my own should not go here, go check .env.example lol
 .env
+
+frontends/web/weather_test.html
