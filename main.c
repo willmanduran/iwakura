@@ -101,6 +101,14 @@ void load_env(const char *filename) {
     log_msg("Loaded %d variables from %s", loaded, filename);
 }
 
+int is_enabled(const char *key) {
+    const char *val = getenv(key);
+    if (val && strcmp(val, "1") == 0) {
+        return 1;
+    }
+    return 0;
+}
+
 int main() {
     int ret = system("mkdir -p $HOME/.iwakura");
     (void)ret;
@@ -129,29 +137,47 @@ int main() {
     spawn_process("./srv_hub");
     sleep(1);
 
-    log_msg("Booting Data Servers...");
+    log_msg("Booting Core Services...");
     spawn_process("./srv_clock");
-    spawn_process("./srv_weather");
-    spawn_process("./srv_guestbook");
-    spawn_process("./srv_spotify");
-    spawn_process("./srv_lastfm");
-    spawn_process("./srv_calendar");
-    spawn_process("./srv_news");
+    spawn_process("./pan_clock");
+
+    if (is_enabled("ENABLE_WEATHER")) {
+        log_msg("Enabling Weather Module...");
+        spawn_process("./srv_weather");
+        spawn_process("./pan_weather");
+    }
+
+    if (is_enabled("ENABLE_MUSIC")) {
+        log_msg("Enabling Music Module...");
+        spawn_process("./srv_spotify");
+        spawn_process("./srv_lastfm");
+        spawn_process("./pan_music");
+    }
+
+    if (is_enabled("ENABLE_CALENDAR")) {
+        log_msg("Enabling Calendar Module...");
+        spawn_process("./srv_calendar");
+        spawn_process("./pan_calendar");
+    }
+
+    if (is_enabled("ENABLE_NEWS")) {
+        log_msg("Enabling News Module...");
+        spawn_process("./srv_news");
+        spawn_process("./pan_news");
+    }
+
+    if (is_enabled("ENABLE_GUESTBOOK")) {
+        log_msg("Enabling Guestbook Module...");
+        spawn_process("./srv_guestbook");
+        spawn_process("./pan_guestbook");
+    }
 
     sleep(1);
-
-    log_msg("Booting UI Panels...");
-    spawn_process("./pan_clock");
-    spawn_process("./pan_weather");
-    spawn_process("./pan_guestbook");
-    spawn_process("./pan_news");
-    spawn_process("./pan_calendar");
-    spawn_process("./pan_music");
 
     log_msg("Booting UI Broker (PAN_HUB)...");
     spawn_process("./pan_hub");
 
-    log_msg("All services online. Core running in background.");
+    log_msg("All selected services online. Core running in background.");
     printf("Iwakura Core is running. You can now launch a frontend (e.g., ./front_tui)\n");
 
     while (1) {
