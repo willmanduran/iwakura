@@ -250,11 +250,21 @@ void render_music(int x, int y, int width) {
         strcat(out, "\n");
 
         char f1[128], f2[128], f3[128];
-        sprintf(f1, " %s ", l_user);
-        sprintf(f2, " Top: %s ", l_top);
-        sprintf(f3, " Scrobbles: %s ", l_scrob);
-        int ft_vis_len = strlen(f1) + 1 + strlen(f2) + 1 + strlen(f3);
+        snprintf(f1, sizeof(f1), " %s ", l_user);
+        snprintf(f3, sizeof(f3), " %s ", l_scrob);
 
+        int used_width = strlen(f1) + strlen(f3) + 2;
+        int max_top_len = width - used_width - 2;
+
+        if (max_top_len < 3) {
+            snprintf(f2, sizeof(f2), " ... ");
+        } else if ((int)strlen(l_top) > max_top_len) {
+            snprintf(f2, sizeof(f2), " %.*s... ", max_top_len - 3, l_top);
+        } else {
+            snprintf(f2, sizeof(f2), " %s ", l_top);
+        }
+
+        int ft_vis_len = strlen(f1) + 1 + strlen(f2) + 1 + strlen(f3);
         sprintf(line_buf, "\033[30;47m%s\033[0m \033[30;47m%s\033[0m \033[30;47m%s\033[0m", f1, f2, f3);
         append_centered(out, width, ft_vis_len, line_buf);
 
