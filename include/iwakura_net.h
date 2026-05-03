@@ -59,12 +59,23 @@ typedef struct {
     uint8_t type;
     uint8_t target_type;
     uint32_t payload_len;
+    char auth_token[65];
     char payload[MAX_PAYLOAD];
-} iwakura_msg_t;
+} __attribute__((packed)) iwakura_msg_t;
 
 static inline const char* _t(const char* key, const char* fallback) {
     const char* val = getenv(key);
     return (val && strlen(val) > 0) ? val : fallback;
+}
+
+static inline void populate_auth_token(char* dest) {
+    const char* secret = getenv("IWAKURA_SECRET");
+    if (secret) {
+        strncpy(dest, secret, 64);
+        dest[64] = '\0';
+    } else {
+        dest[0] = '\0';
+    }
 }
 
 static inline void net_push_to_hub(iwakura_req_t target, const char* payload) {
@@ -77,6 +88,7 @@ static inline void net_push_to_hub(iwakura_req_t target, const char* payload) {
     if (connect(sock, (struct sockaddr *)&hub_addr, sizeof(hub_addr)) == 0) {
         iwakura_msg_t msg;
         memset(&msg, 0, sizeof(msg));
+        populate_auth_token(msg.auth_token);
         msg.type = UPDATE_DATA;
         msg.target_type = target;
         snprintf(msg.payload, MAX_PAYLOAD, "%.*s", MAX_PAYLOAD - 1, payload);
@@ -101,6 +113,7 @@ static inline void net_fetch_from_hub(iwakura_req_t target, char* buffer, const 
     if (connect(sock, (struct sockaddr *)&hub_addr, sizeof(hub_addr)) == 0) {
         iwakura_msg_t msg;
         memset(&msg, 0, sizeof(msg));
+        populate_auth_token(msg.auth_token);
         msg.type = target;
         send(sock, &msg, sizeof(msg), 0);
 
