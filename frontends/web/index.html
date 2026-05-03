@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iwakura Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header class="hero-section">
+    <div class="hero-overlay"></div>
+
+    <div class="hero-center">
+        <div class="flip-clock" id="main-clock">
+            <span id="clock-time">00:00</span>
+        </div>
+
+        <div class="guestbook-banner">
+            <p id="guestbook-text" class="quote-text">"Syncing..."</p>
+            <p id="guestbook-meta" class="quote-meta">Syncing...</p>
+        </div>
+    </div>
+</header>
+
+<main class="dashboard-grid">
+
+    <section class="col-left">
+        <div class="widget-container news-widget">
+            <div class="aero-gloss"></div>
+            <div class="news-header-frosted">
+                <h2>Headlines</h2>
+            </div>
+            <ul id="news-list" class="news-feed">
+                <li>Syncing...</li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="col-center">
+        <div class="media-widget" id="music-card">
+            <div class="media-header">
+                <span id="music-status" class="status-pill">NOW PLAYING</span>
+            </div>
+
+            <div class="media-footer">
+                <div class="progress-wrapper">
+                    <div class="progress-track">
+                        <div class="progress-fill" id="music-progress"></div>
+                    </div>
+                    <div class="progress-labels">
+                        <span id="music-current">0:00</span>
+                        <span id="music-total">0:00</span>
+                    </div>
+                </div>
+                <div class="track-info">
+                    <h2 id="music-track" class="track-title">Syncing...</h2>
+                    <p id="music-artist" class="artist-name">Syncing...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="lfm-widget">
+            <div class="lfm-content">
+                <div class="pill-segment">
+                    <span class="pill-label">TOP ARTIST</span>
+                    <span id="lfm-top" class="pill-value-alt">--</span>
+                </div>
+                <div class="pill-v-divider"></div>
+                <div class="pill-segment">
+                    <span class="pill-label">SCROBBLES</span>
+                    <span id="lfm-scrob" class="pill-value-num">0</span>
+                </div>
+            </div>
+            <div class="aero-gloss"></div>
+        </div>
+    </section>
+
+    <section class="col-right">
+        <div class="weather-widget">
+            <div class="weather-header">
+                <span class="location-label">Santa Cruz de la Sierra</span>
+            </div>
+            <div class="weather-main">
+                <span id="weather-icon">☀️</span>
+                <div class="temp-group">
+                    <span id="weather-temp">24</span><span class="unit">°C</span>
+                </div>
+            </div>
+            <div id="weather-details" class="weather-footer">
+                Loading...
+            </div>
+        </div>
+
+        <div class="widget-container calendar-widget">
+            <div class="calendar-header-styled">
+                <div class="date-leaf">
+                    <span id="cal-leaf-month">MAY</span>
+                    <span id="cal-leaf-day">03</span>
+                </div>
+                <div class="header-text">
+                    <h2 id="cal-header-title" style="letter-spacing: 1px;">Today</h2>
+                </div>
+            </div>
+            <div id="calendar-list" class="ios-calendar-container">
+                <div class="cal-block cal-syncing">Syncing schedule...</div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
