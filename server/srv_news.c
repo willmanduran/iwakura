@@ -11,7 +11,11 @@ size_t write_cb(void *ptr, size_t size, size_t nmemb, void *userdata) {
     size_t n = size * nmemb;
     buf_t *b = (buf_t*)userdata;
     char *new_data = realloc(b->data, b->len + n + 1);
-    if (!new_data) return 0;
+    if (!new_data) {
+        free(b->data);
+        b->data = NULL;
+        return 0;
+    }
     b->data = new_data;
     memcpy(b->data + b->len, ptr, n);
     b->len += n;
