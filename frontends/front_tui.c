@@ -14,6 +14,7 @@
 int sock = -1;
 int tick = 0;
 int last_cols = 0, last_rows = 0;
+
 static char tui_buffer[131072];
 
 char raw_clock[256] = "00:00|Syncing...";
@@ -247,9 +248,11 @@ void render_music(int x, int y, int width) {
         const char* title = is_playing ? _t("L_MUSIC_PLAYING", "REPRODUCIENDO") : _t("L_MUSIC_PAUSED", "PAUSED");
         sprintf(line_buf, "\033[1;32m%s \033[0;90m── \033[1;37m%s\033[0;90m ──\033[0m", is_playing ? "►" : "■", title);
         append_centered(out, width, 8 + strlen(title), line_buf);
+        append_centered(out, width, 0, "");
 
         sprintf(line_buf, "\033[1;32m%s\033[0m \033[0;90m-\033[0m \033[1;37m%s\033[0m", artist, track);
         append_centered(out, width, strlen(artist) + 3 + strlen(track), line_buf);
+        append_centered(out, width, 0, "");
 
         char p_time[32], d_time[32];
         long p_s = prog / 1000;
@@ -265,6 +268,7 @@ void render_music(int x, int y, int width) {
         }
         sprintf(line_buf + strlen(line_buf), "\033[0;90m] \033[1;32m%s \033[0;90m/ \033[1;37m%s\033[0m", p_time, d_time);
         append_centered(out, width, 1 + BAR_WIDTH + 2 + 5 + 3 + 5, line_buf);
+        append_centered(out, width, 0, "");
 
         const char *levels[] = {" ", "▂", "▃", "▄", "▅", "▆", "▇", "█"};
         line_buf[0] = '\0';
@@ -273,6 +277,7 @@ void render_music(int x, int y, int width) {
             sprintf(line_buf + strlen(line_buf), "\033[38;5;137m%s\033[0m", levels[lvl]);
         }
         append_centered(out, width, VIS_WIDTH, line_buf);
+        append_centered(out, width, 0, "");
 
         char f1[128], f2[128], f3[128];
         snprintf(f1, sizeof(f1), " %s ", l_user);
