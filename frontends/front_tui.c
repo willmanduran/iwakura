@@ -261,7 +261,7 @@ void render_music(int x, int y, int width) {
         } else if ((int)strlen(l_top) > max_top_len) {
             snprintf(f2, sizeof(f2), " %.*s... ", max_top_len - 3, l_top);
         } else {
-            snprintf(f2, sizeof(f2), " %s ", l_top);
+            snprintf(f2, sizeof(f2), " %.*s ", 120, l_top);
         }
 
         int ft_vis_len = strlen(f1) + 1 + strlen(f2) + 1 + strlen(f3);
