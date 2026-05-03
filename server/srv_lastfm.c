@@ -28,11 +28,16 @@ void fetch_and_push_lastfm() {
     const char *api_key = getenv("LASTFM_API_KEY");
     const char *user = getenv("LASTFM_USER");
     const char *display_name = getenv("LASTFM_DISPLAY_NAME");
+    const char *period = getenv("LASTFM_PERIOD");
 
     if (!api_key || !user || !display_name) return;
 
+    if (!period || strlen(period) == 0) {
+        period = "7day";
+    }
+
     char url_top[512], url_info[512];
-    snprintf(url_top, sizeof(url_top), "http://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user=%s&api_key=%s&period=7day&limit=1&format=json", user, api_key);
+    snprintf(url_top, sizeof(url_top), "http://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user=%s&api_key=%s&period=%s&limit=1&format=json", user, api_key, period);
     snprintf(url_info, sizeof(url_info), "http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=%s&api_key=%s&format=json", user, api_key);
 
     CURL *curl = curl_easy_init();
