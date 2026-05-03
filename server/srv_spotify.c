@@ -145,9 +145,11 @@ int main() {
     curl_global_init(CURL_GLOBAL_DEFAULT);
     printf("[SPOTIFY] Provider starting...\n");
 
+    int refresh_rate = get_refresh_rate("REFRESH_MUSIC", 6);
+
     while (1) {
         fetch_currently_playing();
-        sleep(6);
+        sleep(refresh_rate);
     }
 
     curl_global_cleanup();
