@@ -3,8 +3,8 @@
 Iwakura is a headless, decoupled dashboard architecture written in pure C.
 
 In plain english, it's a dashboard focused on being super easy to customize both in the back and the frontend.
+It comes with the news, a music and music stats visualizer, the weather, a clock, a calendar and a small guestbook.
 
-Originally being my bedroom's hackily put together tui dashboard, I rewrote it so it now separates the data-fetching, the state management, and the rendering into completely independent microservices, so you can plug and unplug them until you use only what you need or care for.
 
 The goal of this project is to offer a super easy to install dashboard for the casual users, while also being a scaffold for builders. You can use it as-is, but it's really meant to be a playground where you can let your creativity shine by writing your own custom data modules or building much cooler frontends than I ever could since I am definitely not a UX designer.
 
