@@ -29,6 +29,14 @@ void handle_client(int fd) {
 
     msg.payload[MAX_PAYLOAD - 1] = '\0';
 
+    char expected_token[65];
+    populate_auth_token(expected_token);
+
+    if (strncmp(msg.auth_token, expected_token, 64) != 0) {
+        printf("[HUB] SECURITY REJECT: Invalid or missing auth token.\n");
+        return;
+    }
+
     printf("[HUB] Received %d bytes. Type requested: %d\n", bytes, msg.type);
 
     if (msg.type == UPDATE_DATA) {
