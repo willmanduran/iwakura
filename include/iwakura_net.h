@@ -79,7 +79,7 @@ static inline void net_push_to_hub(iwakura_req_t target, const char* payload) {
         memset(&msg, 0, sizeof(msg));
         msg.type = UPDATE_DATA;
         msg.target_type = target;
-        snprintf(msg.payload, MAX_PAYLOAD, "%s", payload);
+        snprintf(msg.payload, MAX_PAYLOAD, "%.*s", MAX_PAYLOAD - 1, payload);
         msg.payload_len = strlen(msg.payload);
         send(sock, &msg, sizeof(msg), 0);
     }
