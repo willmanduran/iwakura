@@ -16,7 +16,7 @@ void send_webpage(int socket, int is_success) {
     const char* fg = getenv("GB_FG_COLOR");
     const char* btn = getenv("GB_BTN_COLOR");
 
-const char* content = is_success ?
+    const char* content = is_success ?
         _t("L_GB_SUCCESS", "<div class='thanks'><h2>Message Sent</h2><p>Your message has been posted.</p></div>") :
         _t("L_GB_FORM", "<form method='POST'><input name='n' placeholder='Your Name' required autocomplete='off'><textarea name='m' rows='5' placeholder='Write a message...' required></textarea><button type='submit'>Send Message</button></form>");
 
@@ -103,6 +103,7 @@ void push_random_message_to_hub() {
 int main() {
     srand(time(NULL));
     int http_port = get_guestbook_port();
+    int refresh_rate = get_refresh_rate("REFRESH_GB", 60);
 
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     int opt = 1;
@@ -144,7 +145,7 @@ int main() {
         }
 
         time_t now = time(NULL);
-        if (now - last_push >= 60) {
+        if (now - last_push >= refresh_rate) {
             push_random_message_to_hub();
             last_push = now;
         }
