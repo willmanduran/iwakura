@@ -1,0 +1,440 @@
+:root {
+    --bg-color: #f4f4f0;
+    --text-color: #333333;
+    --accent-color: #5d7e5d;
+    --glass-bg: rgba(255, 255, 255, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.4);
+    --font-global: sans-serif;
+    --font-quote: 'Playfair Display', serif;
+    --cal-event-bg: rgba(44, 62, 80, 0.92);
+    --cal-todo-bg: rgba(127, 140, 141, 0.88);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-global);
+    background-color: var(--bg-color);
+    background-image:
+            url("https://www.transparenttextures.com/patterns/natural-paper.png"),
+            linear-gradient(
+                    to bottom,
+                    rgba(244, 244, 240, 0) 0%,
+                    rgba(244, 244, 240, 0.4) 30%,
+                    rgba(220, 220, 215, 0.9) 70%,
+                    rgba(244, 244, 240, 1) 100%
+            ),
+            url("/images/background.jpg");
+    background-attachment: fixed;
+    background-size: auto, cover, cover;
+    background-position: center;
+    color: var(--text-color);
+}
+
+.hero-section {
+    position: relative;
+    height: 480px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero-center {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, rgba(244,244,240,0) 0%, rgba(244,244,240,0.2) 100%);
+    z-index: 2;
+}
+
+.flip-clock {
+    background-color: rgba(125, 158, 229, 0.9);
+    color: white;
+    padding: 15px 50px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    backdrop-filter: blur(12px);
+}
+
+#clock-time {
+    font-size: 6.5rem;
+    font-weight: bold;
+    letter-spacing: 4px;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr;
+    gap: 30px;
+    padding: 0 50px 80px 50px;
+    max-width: 1500px;
+    margin: 0 auto;
+    align-items: start;
+    position: relative;
+    z-index: 4;
+}
+
+.widget-container, .media-widget, .weather-widget {
+    background: var(--glass-bg);
+    backdrop-filter: blur(15px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+}
+
+.weather-widget {
+    background-color: #222;
+    background-size: cover;
+    background-position: center;
+    border-radius: 24px;
+    padding: 25px;
+    color: white;
+    font-family: 'Courier New', Courier, monospace;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    transition: background-image 0.5s ease-in-out;
+}
+
+.weather-header {
+    font-size: 1.1rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
+}
+
+.weather-main {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 20px;
+}
+
+#weather-icon {
+    font-size: 4.5rem;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));
+}
+
+.temp-group {
+    display: flex;
+    align-items: flex-start;
+}
+
+#weather-temp {
+    font-size: 5.5rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.unit {
+    font-size: 2rem;
+    margin-top: 10px;
+    margin-left: 5px;
+}
+
+.weather-footer {
+    font-size: 0.95rem;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 12px 20px;
+    border-radius: 15px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.calendar-widget {
+    background-image: linear-gradient(rgba(255,255,255,0.4), rgba(255,255,255,0.4)), url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1000&auto=format&fit=crop');
+    background-size: cover;
+}
+
+.date-leaf {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    width: 50px;
+    height: 55px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#cal-leaf-month {
+    background: #ff3b30;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-align: center;
+    padding: 2px 0;
+}
+
+#cal-leaf-day {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.cal-block {
+    padding: 12px 15px;
+    border-radius: 14px;
+    color: white;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cal-event { background-color: var(--cal-event-bg); }
+.cal-todo { background-color: var(--cal-todo-bg); }
+
+.media-widget {
+    position: relative;
+    height: 380px;
+    background-color: #1a1a1a;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 30px;
+    color: white;
+    overflow: hidden;
+    transition: background-image 0.8s ease-in-out;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 12px;
+}
+
+.media-widget::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.8) 100%);
+    z-index: 1;
+}
+
+.media-header, .media-footer {
+    position: relative;
+    z-index: 2;
+}
+
+.status-pill {
+    font-size: 0.7rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    background: var(--accent-color);
+    padding: 4px 10px;
+    border-radius: 50px;
+    display: inline-block;
+}
+
+.progress-wrapper {
+    margin-bottom: 20px;
+}
+
+.progress-track {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: white;
+    box-shadow: 0 0 10px rgba(255,255,255,0.5);
+    width: 0%;
+    transition: width 1s linear;
+}
+
+.progress-labels {
+    font-family: monospace;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    display: flex;
+    justify-content: space-between;
+    opacity: 0.8;
+}
+
+.track-title {
+    font-family: var(--font-quote);
+    font-size: 2.2rem;
+    margin: 0;
+    line-height: 1.1;
+    text-shadow: 0 2px 15px rgba(0,0,0,0.6);
+}
+
+.artist-name {
+    font-size: 1.1rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    opacity: 0.9;
+    margin-top: 8px;
+}
+
+.lfm-widget {
+    position: relative;
+    width: 100%;
+    min-height: 120px;
+    padding: 25px;
+    margin-top: 20px;
+    border-radius: 24px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    background:
+            linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)),
+            url("https://images.unsplash.com/photo-1565035010268-a3816f98589a?q=80&w=688&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"),
+            url("https://www.transparenttextures.com/patterns/natural-paper.png");
+    background-size: cover;
+    background-position: center;
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+.lfm-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    width: 100%;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.aero-gloss {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50%;
+    background: linear-gradient(rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.pill-label {
+    font-size: 0.65rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: #556655;
+    opacity: 0.7;
+    margin-bottom: 6px;
+}
+
+.pill-value-alt {
+    font-family: var(--font-quote);
+    font-style: italic;
+    font-size: 1.2rem;
+    color: #222;
+}
+
+.pill-value-num {
+    font-family: monospace;
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: var(--accent-color);
+}
+
+.pill-v-divider {
+    width: 1px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.1);
+    border-right: 1px solid rgba(0, 0, 0, 0.5);
+}
+
+.guestbook-banner {
+    text-align: center;
+    padding: 0 20px;
+    max-width: 700px;
+}
+
+.quote-text {
+    font-family: var(--font-quote);
+    font-style: italic;
+    font-size: 1.8rem;
+    color: #222;
+    margin-bottom: 5px;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+.quote-meta {
+    font-size: 0.85rem;
+    color: #444;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.news-widget {
+    position: relative;
+    overflow: hidden;
+    background-image:
+            linear-gradient(rgba(244, 244, 240, 0.9), rgba(244, 244, 240, 0.95)),
+            url("https://images.unsplash.com/photo-1566378246598-5b11a0d486cc?q=80&w=1974&auto=format&fit=crop"),
+            url("https://www.transparenttextures.com/patterns/natural-paper.png");
+    background-size: cover;
+}
+
+.news-feed {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    position: relative;
+    z-index: 2;
+}
+
+.news-feed li {
+    padding: 18px 5px;
+    margin: 0;
+    background: transparent;
+    border: none;
+    font-family: var(--font-global);
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    color: #333;
+    line-height: 1.5;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+    transition: all 0.2s ease;
+}
+
+.news-feed li:hover {
+    background: rgba(255, 255, 255, 0.3);
+    padding-left: 10px;
+    color: var(--accent-color);
+}
+
+.news-feed li:last-child {
+    border-bottom: none;
+    box-shadow: none;
+}
+
+.news-header-frosted h2 {
+    font-family: var(--font-global);
+    font-weight: bold;
+    letter-spacing: 1px;
+    font-size: 1.2rem;
+    color: #1a1a1a;
+}
