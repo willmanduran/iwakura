@@ -5,15 +5,36 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <time.h>
+#include <sys/ioctl.h>
 #include "../include/iwakura_net.h"
 
 #define BAR_WIDTH 30
 #define VIS_WIDTH 24
-#define PANE_WIDTH 84
 
 int sock = -1;
 int tick = 0;
-const char *vis_colors[] = {"\033[31m", "\033[32m", "\033[33m", "\033[34m", "\033[35m", "\033[36m"};
+int last_cols = 0, last_rows = 0;
+
+char raw_clock[256] = "00:00|Syncing...";
+char raw_weather[256] = "0|0|0|0|0";
+char raw_news[4096] = "";
+char raw_calendar[4096] = "";
+char raw_guestbook[512] = "No messages yet.";
+char raw_music[1024] = "0|None|Silence|0|1|User|N/A|0";
+
+const char *digit_font[11][5] = {
+    {"###", "# #", "# #", "# #", "###"},
+    {" ##", "  #", "  #", "  #", "###"},
+    {"###", "  #", "###", "#  ", "###"},
+    {"###", "  #", "###", "  #", "###"},
+    {"# #", "# #", "###", "  #", "  #"},
+    {"###", "#  ", "###", "  #", "###"},
+    {"###", "#  ", "###", "# #", "###"},
+    {"###", "  #", "  #", "  #", "  #"},
+    {"###", "# #", "###", "# #", "###"},
+    {"###", "# #", "###", "  #", "###"},
+    {"   ", " * ", "   ", " * ", "   "}
+};
 
 void tui_init() {
     printf("\033[2J\033[?25l\033[?7l");
@@ -21,7 +42,7 @@ void tui_init() {
 }
 
 void tui_cleanup() {
-    printf("\n\033[?25h\033[?7h\033[0m");
+    printf("\n\033[?25h\033[?7h\033[0m\033[2J");
     fflush(stdout);
 }
 
@@ -37,7 +58,6 @@ void tui_draw_widget(int start_x, int start_y, const char *payload) {
             putchar(payload[i]);
         }
     }
-    fflush(stdout);
 }
 
 void handle_shutdown(int sig) {
@@ -64,71 +84,124 @@ void load_env(const char *filename) {
     fclose(f);
 }
 
-void render_clock(char *data) {
-    char out[MAX_PAYLOAD];
-    char *time_str = strtok(data, "|");
-    char *date_str = strtok(NULL, "|");
-    if (time_str && date_str) {
-        snprintf(out, sizeof(out), "\033[1;32m%s\033[0m \033[1;30m|\033[0m %s                                        ", time_str, date_str);
-    }
-    tui_draw_widget(4, 2, out);
+void append_centered(char *out, int width, int vis_len, const char *content) {
+    int pad = (width - vis_len) / 2;
+    if (pad < 0) pad = 0;
+    for (int i = 0; i < pad; i++) strcat(out, " ");
+    strcat(out, content);
+    strcat(out, "\033[K\n");
 }
 
-void render_weather(char *data) {
-    char out[MAX_PAYLOAD];
-    char *t = strtok(data, "|");
+void render_clock(int y, int cols) {
+    char buf[256]; strcpy(buf, raw_clock);
+    char *time_str = strtok(buf, "|");
+    char *date_str = strtok(NULL, "|");
+    if (!time_str || !date_str) return;
+
+    int date_len = strlen(date_str);
+    int date_x = (cols - date_len) / 2;
+    char out_date[256];
+    snprintf(out_date, sizeof(out_date), "\033[1;37m%s\033[0m\033[K", date_str);
+    tui_draw_widget(date_x, y, out_date);
+
+    int time_len = strlen(time_str);
+    int total_width = (time_len * 3) + (time_len - 1);
+    int start_x = (cols - total_width) / 2;
+
+    for (int r = 0; r < 5; r++) {
+        printf("\033[%d;%dH\033[1;36m", y + 2 + r, start_x);
+        for (int i = 0; i < time_len; i++) {
+            int idx = (time_str[i] == ':') ? 10 : (time_str[i] - '0');
+            printf("%s ", digit_font[idx][r]);
+        }
+        printf("\033[0m\033[K");
+    }
+}
+
+void render_weather(int y, int cols) {
+    char buf[256]; strcpy(buf, raw_weather);
+    char *t = strtok(buf, "|");
     char *f = strtok(NULL, "|");
     char *w = strtok(NULL, "|");
-    if (t && f && w) {
-        snprintf(out, sizeof(out),
-            "\033[0;36m%s\033[0m                                        \n"
-            "Temp:  %s°C                                        \n"
-            "Feels: %s°C                                        \n"
-            "Wind:  %s km/h                                     ",
-            _t("L_WX_WEATHER", "WEATHER"), t, f, w);
-        tui_draw_widget(4, 4, out);
-    }
+    if (!t || !f || !w) return;
+
+    char str[128];
+    snprintf(str, sizeof(str), "Temp %s°C  |  Feels %s°C  |  Wind %s km/h", t, f, w);
+    int x = (cols - strlen(str)) / 2;
+
+    char out[256];
+    snprintf(out, sizeof(out), "\033[0;90m%s\033[0m\033[K", str);
+    tui_draw_widget(x, y, out);
 }
 
-void render_news(char *data) {
-    char out[4096];
-    snprintf(out, sizeof(out), "\033[0;90m┌── %-56.56s ┐\033[0m\n", _t("L_NEWS_HEADER", "NEWS"));
-    char *token = strtok(data, "|");
+void render_guestbook(int y, int cols) {
+    char str[1024];
+    snprintf(str, sizeof(str), "“ %s ”", raw_guestbook);
+
+    int len = strlen(str);
+    if (len > 120) len = 120;
+    int x = (cols - len) / 2;
+
+    char out[2048];
+    snprintf(out, sizeof(out), "\033[38;5;216m%s\033[0m\033[K", str);
+    tui_draw_widget(x, y, out);
+}
+
+void render_news(int x, int y, int width) {
+    char buf[4096]; strcpy(buf, raw_news);
+    char out[4096] = "";
+    int hr_len = width - 15;
+    if (hr_len < 5) hr_len = 5;
+
+    char header[256];
+    snprintf(header, sizeof(header), "\033[0;90m┌── \033[1;37m%-10.10s\033[0;90m ", _t("L_NEWS_HEADER", "NEWS"));
+    strcpy(out, header);
+    for(int i = 0; i < hr_len; i++) strcat(out, "─");
+    strcat(out, "\033[0m\033[K\n");
+
+    char *token = strtok(buf, "|");
     int count = 0;
-    while (token && count < 10) {
+    while (token && count < 8) {
         char line[512];
-        snprintf(line, sizeof(line), " \033[0;90m»\033[0m %-60.60s \n", token);
+        snprintf(line, sizeof(line), " \033[0;90m»\033[0m \033[38;5;250m%.*s\033[0m\033[K\n", width - 6, token);
         strcat(out, line);
         token = strtok(NULL, "|");
         count++;
     }
-    strcat(out, "\033[0;90m└──────────────────────────────────────────────────────────┘\033[0m");
-    tui_draw_widget(48, 2, out);
+    tui_draw_widget(x, y, out);
 }
 
-void render_calendar(char *data) {
-    char out[4096];
-    snprintf(out, sizeof(out), "\033[1;35m  %-30.30s \033[0m\n\n", _t("L_CAL_HEADER", "CALENDAR"));
-    char *token = strtok(data, "|");
-    while (token) {
+void render_calendar(int x, int y, int width) {
+    char buf[4096]; strcpy(buf, raw_calendar);
+    char out[4096] = "";
+    int hr_len = width - 15;
+    if (hr_len < 5) hr_len = 5;
+
+    char header[256];
+    snprintf(header, sizeof(header), "\033[1;35m┌── \033[1;35m%-10.10s\033[1;35m ", _t("L_CAL_HEADER", "CALENDAR"));
+    strcpy(out, header);
+    for(int i = 0; i < hr_len; i++) strcat(out, "─");
+    strcat(out, "\033[0m\033[K\n");
+
+    char *token = strtok(buf, "|");
+    int count = 0;
+    while (token && count < 8) {
         while(*token == ' ') token++;
         char line[512];
-        snprintf(line, sizeof(line), "  \033[1;35m•\033[0m %-40.40s \n", token);
+        snprintf(line, sizeof(line), " \033[1;35m•\033[0m \033[38;5;250m%.*s\033[0m\033[K\n", width - 6, token);
         strcat(out, line);
         token = strtok(NULL, "|");
+        count++;
     }
-    tui_draw_widget(48, 16, out);
+    tui_draw_widget(x, y, out);
 }
 
-void render_guestbook(char *data) {
-    char out[MAX_PAYLOAD];
-    snprintf(out, sizeof(out), "\033[1;33m“ %s ”\033[0m                                                            ", data);
-    tui_draw_widget(4, 10, out);
-}
-
-void render_music(char *data) {
+void render_music(int x, int y, int width) {
+    char buf[1024]; strcpy(buf, raw_music);
     char out[4096] = "";
-    char *is_play_str = strtok(data, "|");
+    char line_buf[1024];
+
+    char *is_play_str = strtok(buf, "|");
     char *artist = strtok(NULL, "|");
     char *track = strtok(NULL, "|");
     char *prog_str = strtok(NULL, "|");
@@ -142,36 +215,94 @@ void render_music(char *data) {
         long prog = atol(prog_str);
         long dur = atol(dur_str);
 
-        sprintf(out + strlen(out), "\033[0;90m┌── %-13.13s ─────────────────────────────────────────────────────────┐\033[0m\n",
-                is_playing ? _t("L_MUSIC_PLAYING", "NOW PLAYING") : _t("L_MUSIC_PAUSED", "PAUSED"));
-        sprintf(out + strlen(out), "   \033[1;32m%s\033[0m - \033[1m%s\033[0m\n", artist, track);
+        const char* title = is_playing ? _t("L_MUSIC_PLAYING", "REPRODUCIENDO") : _t("L_MUSIC_PAUSED", "PAUSED");
+        sprintf(line_buf, "\033[1;32m%s \033[0;90m── \033[1;37m%s\033[0;90m ──\033[0m", is_playing ? "►" : "■", title);
+        append_centered(out, width, 8 + strlen(title), line_buf);
+        strcat(out, "\n");
 
+        sprintf(line_buf, "\033[1;32m%s\033[0m \033[0;90m-\033[0m \033[1;37m%s\033[0m", artist, track);
+        append_centered(out, width, strlen(artist) + 3 + strlen(track), line_buf);
+        strcat(out, "\n");
+
+        char p_time[32], d_time[32];
+        long p_s = prog / 1000;
+        long d_s = dur / 1000;
+        snprintf(p_time, sizeof(p_time), "%02ld:%02ld", p_s / 60, p_s % 60);
+        snprintf(d_time, sizeof(d_time), "%02ld:%02ld", d_s / 60, d_s % 60);
+
+        strcpy(line_buf, "\033[0;90m[\033[0m");
         float ratio = dur > 0 ? (float)prog / (float)dur : 0;
         int filled = (int)(ratio * BAR_WIDTH);
-        strcat(out, "   [");
-        for (int i = 0; i < BAR_WIDTH; ++i) strcat(out, (i < filled) ? "\033[32m⣿\033[0m" : "\033[2m⣀\033[0m");
-        strcat(out, "]   ");
+        for (int i = 0; i < BAR_WIDTH; ++i) {
+            strcat(line_buf, (i < filled) ? "\033[1;32m⣿\033[0m" : "\033[0;90m⣀\033[0m");
+        }
+        sprintf(line_buf + strlen(line_buf), "\033[0;90m] \033[1;32m%s \033[0;90m/ \033[1;37m%s\033[0m", p_time, d_time);
+        append_centered(out, width, 1 + BAR_WIDTH + 2 + 5 + 3 + 5, line_buf);
+        strcat(out, "\n");
 
         const char *levels[] = {" ", "▂", "▃", "▄", "▅", "▆", "▇", "█"};
-        const char *current_color = vis_colors[(tick / 4) % 6];
+        line_buf[0] = '\0';
         for (int i = 0; i < VIS_WIDTH; i++) {
             int lvl = is_playing ? (rand() % 8) : 0;
-            sprintf(out + strlen(out), "%s%s\033[0m", current_color, levels[lvl]);
+            sprintf(line_buf + strlen(line_buf), "\033[38;5;137m%s\033[0m", levels[lvl]);
         }
-        sprintf(out + strlen(out), "\n   %s  │  %s  │  %s \n", l_user, l_top, l_scrob);
-        strcat(out, "\033[0;90m└────────────────────────────────────────────────────────────────────────┘\033[0m");
-        tui_draw_widget(4, 24, out);
+        append_centered(out, width, VIS_WIDTH, line_buf);
+        strcat(out, "\n");
+
+        char f1[128], f2[128], f3[128];
+        sprintf(f1, " %s ", l_user);
+        sprintf(f2, " Top: %s ", l_top);
+        sprintf(f3, " Scrobbles: %s ", l_scrob);
+        int ft_vis_len = strlen(f1) + 1 + strlen(f2) + 1 + strlen(f3);
+
+        sprintf(line_buf, "\033[30;47m%s\033[0m \033[30;47m%s\033[0m \033[30;47m%s\033[0m", f1, f2, f3);
+        append_centered(out, width, ft_vis_len, line_buf);
+
+        tui_draw_widget(x, y, out);
     }
+}
+
+void draw_screen() {
+    struct winsize w;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    int cols = w.ws_col;
+    int rows = w.ws_row;
+
+    if (cols != last_cols || rows != last_rows) {
+        printf("\033[2J");
+        last_cols = cols;
+        last_rows = rows;
+    }
+
+    render_clock(3, cols);
+    render_weather(13, cols);
+    render_guestbook(17, cols);
+
+    int bottom_y = rows - 15;
+    if (bottom_y < 20) bottom_y = 20;
+
+    int col_width = cols / 3;
+    int left_x = 2;
+    int center_x = col_width + 2;
+    int right_x = (col_width * 2) + 2;
+
+    render_news(left_x, bottom_y, col_width - 4);
+    render_music(center_x, bottom_y, col_width - 4);
+    render_calendar(right_x, bottom_y, col_width - 4);
+
+    fflush(stdout);
 }
 
 void process_stream(char *buffer) {
     tick++;
-    if (strncmp(buffer, "CLOCK|", 6) == 0) render_clock(buffer + 6);
-    else if (strncmp(buffer, "WEATHER|", 8) == 0) render_weather(buffer + 8);
-    else if (strncmp(buffer, "NEWS|", 5) == 0) render_news(buffer + 5);
-    else if (strncmp(buffer, "CALENDAR|", 9) == 0) render_calendar(buffer + 9);
-    else if (strncmp(buffer, "GUESTBOOK|", 10) == 0) render_guestbook(buffer + 10);
-    else if (strncmp(buffer, "MUSIC|", 6) == 0) render_music(buffer + 6);
+    if (strncmp(buffer, "CLOCK|", 6) == 0) strcpy(raw_clock, buffer + 6);
+    else if (strncmp(buffer, "WEATHER|", 8) == 0) strcpy(raw_weather, buffer + 8);
+    else if (strncmp(buffer, "NEWS|", 5) == 0) strcpy(raw_news, buffer + 5);
+    else if (strncmp(buffer, "CALENDAR|", 9) == 0) strcpy(raw_calendar, buffer + 9);
+    else if (strncmp(buffer, "GUESTBOOK|", 10) == 0) strcpy(raw_guestbook, buffer + 10);
+    else if (strncmp(buffer, "MUSIC|", 6) == 0) strcpy(raw_music, buffer + 6);
+
+    draw_screen();
 }
 
 int main() {
@@ -203,6 +334,8 @@ int main() {
     int bytes_read;
     char line[8192];
     int line_len = 0;
+
+    draw_screen();
 
     while ((bytes_read = recv(sock, buffer, sizeof(buffer) - 1, 0)) > 0) {
         for (int i = 0; i < bytes_read; i++) {
