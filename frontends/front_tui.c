@@ -295,16 +295,21 @@ void draw_screen() {
 
 void process_stream(char *buffer) {
     tick++;
-    if (strncmp(buffer, "CLOCK|", 6) == 0) strcpy(raw_clock, buffer + 6);
-    else if (strncmp(buffer, "WEATHER|", 8) == 0) strcpy(raw_weather, buffer + 8);
-    else if (strncmp(buffer, "NEWS|", 5) == 0) strcpy(raw_news, buffer + 5);
-    else if (strncmp(buffer, "CALENDAR|", 9) == 0) strcpy(raw_calendar, buffer + 9);
-    else if (strncmp(buffer, "GUESTBOOK|", 10) == 0) strcpy(raw_guestbook, buffer + 10);
-    else if (strncmp(buffer, "MUSIC|", 6) == 0) strcpy(raw_music, buffer + 6);
+    if (strncmp(buffer, "CLOCK|", 6) == 0)
+        snprintf(raw_clock, sizeof(raw_clock), "%s", buffer + 6);
+    else if (strncmp(buffer, "WEATHER|", 8) == 0)
+        snprintf(raw_weather, sizeof(raw_weather), "%s", buffer + 8);
+    else if (strncmp(buffer, "NEWS|", 5) == 0)
+        snprintf(raw_news, sizeof(raw_news), "%s", buffer + 5);
+    else if (strncmp(buffer, "CALENDAR|", 9) == 0)
+        snprintf(raw_calendar, sizeof(raw_calendar), "%s", buffer + 9);
+    else if (strncmp(buffer, "GUESTBOOK|", 10) == 0)
+        snprintf(raw_guestbook, sizeof(raw_guestbook), "%s", buffer + 10);
+    else if (strncmp(buffer, "MUSIC|", 6) == 0)
+        snprintf(raw_music, sizeof(raw_music), "%s", buffer + 6);
 
     draw_screen();
 }
-
 int main() {
     signal(SIGINT, handle_shutdown);
     signal(SIGTERM, handle_shutdown);
