@@ -1,4 +1,4 @@
-#define _XOPEN_SOURCE 700
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,7 +46,6 @@ void parse_event_time(char *block, char *end_block, char *time_str) {
                 if (strptime(format_str, "%Y%m%dT%H%M%S", &ev_time)) {
                     time_t raw_time = timegm(&ev_time);
                     struct tm *local_time = localtime(&raw_time);
-
                     strftime(time_str, 16, "[%H:%M] ", local_time);
                 }
             }
