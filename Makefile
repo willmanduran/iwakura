@@ -1,18 +1,18 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -O2
 
-all: hub clock_provider guestbook weather srv_spotify srv_lastfm srv_calendar pan_guestbook pan_music pan_calendar pan_clock pan_weather srv_news pan_news orch_main launcher
+all: srv_hub srv_clock srv_guestbook srv_weather srv_spotify srv_lastfm srv_calendar pan_guestbook pan_music pan_calendar pan_clock pan_weather srv_news pan_news pan_hub front_tui iwakura
 
-hub: server/srv_hub.c
-	$(CC) $(CFLAGS) -o srv_hub server/srv_hub.c
+srv_hub: core/srv_hub.c
+	$(CC) $(CFLAGS) -o srv_hub core/srv_hub.c
 
-clock_provider: server/srv_clock.c
+srv_clock: server/srv_clock.c
 	$(CC) $(CFLAGS) -o srv_clock server/srv_clock.c
 
-guestbook: server/srv_guestbook.c
+srv_guestbook: server/srv_guestbook.c
 	$(CC) $(CFLAGS) -o srv_guestbook server/srv_guestbook.c
 
-weather: server/srv_weather.c
+srv_weather: server/srv_weather.c
 	$(CC) $(CFLAGS) -o srv_weather server/srv_weather.c -lcurl -ljson-c
 
 srv_spotify: server/srv_spotify.c
@@ -45,11 +45,14 @@ srv_news: server/srv_news.c
 pan_news: panels/pan_news.c
 	$(CC) $(CFLAGS) -o pan_news panels/pan_news.c
 
-orch_main: main.c orchestrator/network.c orchestrator/router.c frontends/tui_frontend.c
-	$(CC) $(CFLAGS) -o orch_main main.c orchestrator/network.c orchestrator/router.c frontends/tui_frontend.c
+pan_hub: core/pan_hub.c
+	$(CC) $(CFLAGS) -o pan_hub core/pan_hub.c
 
-launcher: launcher.c
-	$(CC) $(CFLAGS) -o launcher launcher.c
+front_tui: frontends/front_tui.c
+	$(CC) $(CFLAGS) -o front_tui frontends/front_tui.c
+
+iwakura: main.c
+	$(CC) $(CFLAGS) -o iwakura main.c
 
 clean:
-	rm -f srv_hub srv_clock srv_guestbook srv_weather srv_spotify srv_lastfm srv_calendar pan_guestbook pan_music pan_calendar pan_clock pan_weather srv_news pan_news orch_main launcher
+	rm -f srv_hub srv_clock srv_guestbook srv_weather srv_spotify srv_lastfm srv_calendar pan_guestbook pan_music pan_calendar pan_clock pan_weather srv_news pan_news pan_hub front_tui iwakura
