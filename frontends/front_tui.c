@@ -14,6 +14,7 @@
 int sock = -1;
 int tick = 0;
 int last_cols = 0, last_rows = 0;
+static char tui_buffer[131072];
 
 char raw_clock[256] = "00:00|Syncing...";
 char raw_weather[256] = "0|0|0|0|0";
@@ -37,6 +38,7 @@ const char *digit_font[11][5] = {
 };
 
 void tui_init() {
+    setvbuf(stdout, tui_buffer, _IOFBF, sizeof(tui_buffer));
     printf("\033[2J\033[?25l\033[?7l");
     fflush(stdout);
 }
@@ -50,12 +52,19 @@ void tui_draw_widget(int start_x, int start_y, const char *payload) {
     int cx = start_x;
     int cy = start_y;
     printf("\033[%d;%dH", cy, cx);
-    for (int i = 0; payload[i] != '\0'; i++) {
-        if (payload[i] == '\n') {
+
+    const char *p = payload;
+    while (*p) {
+        const char *newline = strchr(p, '\n');
+        if (newline) {
+            int len = newline - p;
+            printf("%.*s", len, p);
             cy++;
             printf("\033[%d;%dH", cy, cx);
+            p = newline + 1;
         } else {
-            putchar(payload[i]);
+            printf("%s", p);
+            break;
         }
     }
 }
