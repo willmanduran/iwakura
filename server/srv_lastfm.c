@@ -92,9 +92,11 @@ int main() {
     curl_global_init(CURL_GLOBAL_DEFAULT);
     printf("Last.fm Provider starting...\n");
 
+    int refresh_rate = get_refresh_rate("REFRESH_LFM", 300);
+
     while (1) {
         fetch_and_push_lastfm();
-        sleep(300);
+        sleep(refresh_rate);
     }
 
     curl_global_cleanup();
