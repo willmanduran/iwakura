@@ -34,7 +34,11 @@ int main() {
     int opt = 1;
     setsockopt(udp_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
-    struct sockaddr_in udp_addr = { .sin_family = AF_INET, .sin_addr.s_addr = INADDR_ANY, .sin_port = htons(udp_port) };
+    struct sockaddr_in udp_addr = {
+        .sin_family = AF_INET,
+        .sin_addr.s_addr = htonl(INADDR_LOOPBACK),
+        .sin_port = htons(udp_port)
+    };
     if (bind(udp_sock, (struct sockaddr *)&udp_addr, sizeof(udp_addr)) < 0) {
         perror("[PAN_HUB] UDP Bind failed");
         return 1;
@@ -110,9 +114,14 @@ int main() {
                     n++;
                 }
 
+                char secret[65];
+                populate_auth_token(secret);
+                char signed_buffer[8192];
+                int signed_len = snprintf(signed_buffer, sizeof(signed_buffer), "%s|%s", secret, buffer);
+
                 for (int i = 0; i < MAX_CLIENTS; i++) {
                     if (clients[i] != -1) {
-                        send(clients[i], buffer, n, 0);
+                        send(clients[i], signed_buffer, signed_len, 0);
                     }
                 }
             }
