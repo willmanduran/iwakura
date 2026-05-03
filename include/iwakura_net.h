@@ -30,6 +30,11 @@ static inline int get_orchestrator_port() {
     return (val && strlen(val) > 0) ? atoi(val) : 8889;
 }
 
+static inline int get_frontend_port() {
+    const char* val = getenv("FRONTEND_PORT");
+    return (val && strlen(val) > 0) ? atoi(val) : 8891;
+}
+
 typedef enum {
     REQ_CLOCK = 0,
     REQ_WEATHER,
