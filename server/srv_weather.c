@@ -74,9 +74,11 @@ int main() {
     curl_global_init(CURL_GLOBAL_DEFAULT);
     printf("Weather Provider starting...\n");
 
+    int refresh_rate = get_refresh_rate("REFRESH_WX", 900);
+
     while (1) {
         fetch_and_push_weather();
-        sleep(900);
+        sleep(refresh_rate);
     }
 
     curl_global_cleanup();
