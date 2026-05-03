@@ -80,12 +80,22 @@ void push_random_message_to_hub() {
     int count = 0;
     while (fgets(lines[count], 256, f) && count < 100) {
         lines[count][strcspn(lines[count], "\n")] = 0;
-        count++;
+        if (strlen(lines[count]) > 5) {
+            count++;
+        }
     }
     fclose(f);
 
     if (count == 0) return;
-    int r = rand() % count;
+
+    static int last_idx = -1;
+    int r = 0;
+    if (count > 1) {
+        do {
+            r = rand() % count;
+        } while (r == last_idx);
+    }
+    last_idx = r;
 
     net_push_to_hub(REQ_GUESTBOOK, lines[r]);
 }
