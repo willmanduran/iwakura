@@ -26,6 +26,33 @@ void get_iso_date(char *buf, int offset_days) {
     strftime(buf, 20, "%Y%m%dT%H%M%SZ", t);
 }
 
+void parse_event_time(char *block, char *end_block, char *time_str) {
+    strcpy(time_str, "[-] ");
+
+    char *dtstart = strstr(block, "DTSTART");
+    if (dtstart && dtstart < end_block) {
+        char *val_start = strchr(dtstart, ':');
+        if (val_start && val_start < end_block) {
+            val_start++;
+
+            char *t_marker = strchr(val_start, 'T');
+            if (t_marker && (t_marker - val_start) == 8 && t_marker < end_block) {
+                struct tm ev_time = {0};
+                char format_str[32];
+                strncpy(format_str, val_start, 15);
+                format_str[15] = '\0';
+
+                if (strptime(format_str, "%Y%m%dT%H%M%S", &ev_time)) {
+                    time_t raw_time = timegm(&ev_time);
+                    struct tm *local_time = localtime(&raw_time);
+
+                    strftime(time_str, 16, "[%H:%M] ", local_time);
+                }
+            }
+        }
+    }
+}
+
 void extract_summaries(char *raw_data, char *final_payload, int *count) {
     char *search_ptr = raw_data;
 
@@ -47,13 +74,16 @@ void extract_summaries(char *raw_data, char *final_payload, int *count) {
             summary += 8;
             char *line_end = strstr(summary, "\r\n");
             if (line_end) {
+                char time_prefix[16];
+                parse_event_time(block, end_block, time_prefix);
+
                 char entry[128];
                 int len = line_end - summary;
-                if (len > 100) len = 100;
-                strncpy(entry, summary, len);
-                entry[len] = '\0';
+                if (len > 80) len = 80;
 
-                if (strlen(final_payload) + len + 5 < MAX_PAYLOAD) {
+                snprintf(entry, sizeof(entry), "%s%.*s", time_prefix, len, summary);
+
+                if (strlen(final_payload) + strlen(entry) + 5 < MAX_PAYLOAD) {
                     strcat(final_payload, entry);
                     strcat(final_payload, " | ");
                     (*count)++;
@@ -68,6 +98,8 @@ void fetch_and_push_calendar() {
     const char *url = getenv("CAL_URL");
     const char *user = getenv("CAL_USER");
     const char *pass = getenv("CAL_PASS");
+
+    if (!url || !user || !pass || strlen(url) < 5) return;
 
     char start_date[20], end_date[20];
     get_iso_date(start_date, 0);
