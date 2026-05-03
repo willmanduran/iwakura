@@ -5,18 +5,14 @@
 
 int main() {
     char raw_data[MAX_PAYLOAD];
-    char display_frame[MAX_PAYLOAD];
+    char display_frame[MAX_PAYLOAD + 16];
 
     while (1) {
-        net_fetch_from_hub(REQ_GUESTBOOK, raw_data, "");
+        net_fetch_from_hub(REQ_GUESTBOOK, raw_data, _t("L_GB_EMPTY", "No messages yet"));
 
-        if (strlen(raw_data) > 0) {
-            snprintf(display_frame, MAX_PAYLOAD, "GUESTBOOK|\033[1;33m“ %s ”\033[0m                                                            ", raw_data);
-        } else {
-            snprintf(display_frame, MAX_PAYLOAD, "GUESTBOOK|\033[1;33m[ %s ]\033[0m                                                            ", _t("L_GB_EMPTY", "No messages yet"));
-        }
-
+        snprintf(display_frame, sizeof(display_frame), "GUESTBOOK|%s", raw_data);
         net_push_to_orchestrator(display_frame);
+
         sleep(2);
     }
     return 0;
