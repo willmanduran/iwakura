@@ -294,22 +294,33 @@ void draw_screen() {
 }
 
 void process_stream(char *buffer) {
+    char expected_secret[65];
+    populate_auth_token(expected_secret);
+    int sec_len = strlen(expected_secret);
+
+    if (sec_len > 0 && (strncmp(buffer, expected_secret, sec_len) != 0 || buffer[sec_len] != '|')) {
+        return;
+    }
+
+    char *actual_payload = (sec_len > 0) ? (buffer + sec_len + 1) : buffer;
+
     tick++;
-    if (strncmp(buffer, "CLOCK|", 6) == 0)
-        snprintf(raw_clock, sizeof(raw_clock), "%s", buffer + 6);
-    else if (strncmp(buffer, "WEATHER|", 8) == 0)
-        snprintf(raw_weather, sizeof(raw_weather), "%s", buffer + 8);
-    else if (strncmp(buffer, "NEWS|", 5) == 0)
-        snprintf(raw_news, sizeof(raw_news), "%s", buffer + 5);
-    else if (strncmp(buffer, "CALENDAR|", 9) == 0)
-        snprintf(raw_calendar, sizeof(raw_calendar), "%s", buffer + 9);
-    else if (strncmp(buffer, "GUESTBOOK|", 10) == 0)
-        snprintf(raw_guestbook, sizeof(raw_guestbook), "%s", buffer + 10);
-    else if (strncmp(buffer, "MUSIC|", 6) == 0)
-        snprintf(raw_music, sizeof(raw_music), "%s", buffer + 6);
+    if (strncmp(actual_payload, "CLOCK|", 6) == 0)
+        snprintf(raw_clock, sizeof(raw_clock), "%s", actual_payload + 6);
+    else if (strncmp(actual_payload, "WEATHER|", 8) == 0)
+        snprintf(raw_weather, sizeof(raw_weather), "%s", actual_payload + 8);
+    else if (strncmp(actual_payload, "NEWS|", 5) == 0)
+        snprintf(raw_news, sizeof(raw_news), "%s", actual_payload + 5);
+    else if (strncmp(actual_payload, "CALENDAR|", 9) == 0)
+        snprintf(raw_calendar, sizeof(raw_calendar), "%s", actual_payload + 9);
+    else if (strncmp(actual_payload, "GUESTBOOK|", 10) == 0)
+        snprintf(raw_guestbook, sizeof(raw_guestbook), "%s", actual_payload + 10);
+    else if (strncmp(actual_payload, "MUSIC|", 6) == 0)
+        snprintf(raw_music, sizeof(raw_music), "%s", actual_payload + 6);
 
     draw_screen();
 }
+
 int main() {
     signal(SIGINT, handle_shutdown);
     signal(SIGTERM, handle_shutdown);
