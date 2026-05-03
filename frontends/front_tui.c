@@ -44,7 +44,7 @@ void tui_init() {
 }
 
 void tui_cleanup() {
-    printf("\n\033[?25h\033[?7h\033[0m\033[2J");
+    printf("\n\033[?2026l\033[?25h\033[?7h\033[0m\033[2J");
     fflush(stdout);
 }
 
@@ -96,9 +96,15 @@ void load_env(const char *filename) {
 void append_centered(char *out, int width, int vis_len, const char *content) {
     int pad = (width - vis_len) / 2;
     if (pad < 0) pad = 0;
+
     for (int i = 0; i < pad; i++) strcat(out, " ");
     strcat(out, content);
-    strcat(out, "\033[K\n");
+
+    int right_pad = width - pad - vis_len;
+    if (right_pad < 0) right_pad = 0;
+    for (int i = 0; i < right_pad; i++) strcat(out, " ");
+
+    strcat(out, "\n");
 }
 
 void render_clock(int y, int cols) {
@@ -166,13 +172,20 @@ void render_news(int x, int y, int width) {
     snprintf(header, sizeof(header), "\033[0;90m┌── \033[1;37m%-10.10s\033[0;90m ", _t("L_NEWS_HEADER", "NEWS"));
     strcpy(out, header);
     for(int i = 0; i < hr_len; i++) strcat(out, "─");
-    strcat(out, "\033[0m\033[K\n");
+
+    int right_pad = width - (15 + hr_len);
+    if (right_pad < 0) right_pad = 0;
+    for (int i = 0; i < right_pad; i++) strcat(out, " ");
+    strcat(out, "\033[0m\n");
+
+    int safe_w = width - 6;
+    if (safe_w < 1) safe_w = 1;
 
     char *token = strtok(buf, "|");
     int count = 0;
     while (token && count < 8) {
         char line[512];
-        snprintf(line, sizeof(line), " \033[0;90m»\033[0m \033[38;5;250m%.*s\033[0m\033[K\n", width - 6, token);
+        snprintf(line, sizeof(line), " \033[0;90m»\033[0m \033[38;5;250m%-*.*s\033[0m   \n", safe_w, safe_w, token);
         strcat(out, line);
         token = strtok(NULL, "|");
         count++;
@@ -190,14 +203,21 @@ void render_calendar(int x, int y, int width) {
     snprintf(header, sizeof(header), "\033[1;35m┌── \033[1;35m%-10.10s\033[1;35m ", _t("L_CAL_HEADER", "CALENDAR"));
     strcpy(out, header);
     for(int i = 0; i < hr_len; i++) strcat(out, "─");
-    strcat(out, "\033[0m\033[K\n");
+
+    int right_pad = width - (15 + hr_len);
+    if (right_pad < 0) right_pad = 0;
+    for (int i = 0; i < right_pad; i++) strcat(out, " ");
+    strcat(out, "\033[0m\n");
+
+    int safe_w = width - 6;
+    if (safe_w < 1) safe_w = 1;
 
     char *token = strtok(buf, "|");
     int count = 0;
     while (token && count < 8) {
         while(*token == ' ') token++;
         char line[512];
-        snprintf(line, sizeof(line), " \033[1;35m•\033[0m \033[38;5;250m%.*s\033[0m\033[K\n", width - 6, token);
+        snprintf(line, sizeof(line), " \033[1;35m•\033[0m \033[38;5;250m%-*.*s\033[0m   \n", safe_w, safe_w, token);
         strcat(out, line);
         token = strtok(NULL, "|");
         count++;
@@ -227,11 +247,9 @@ void render_music(int x, int y, int width) {
         const char* title = is_playing ? _t("L_MUSIC_PLAYING", "REPRODUCIENDO") : _t("L_MUSIC_PAUSED", "PAUSED");
         sprintf(line_buf, "\033[1;32m%s \033[0;90m── \033[1;37m%s\033[0;90m ──\033[0m", is_playing ? "►" : "■", title);
         append_centered(out, width, 8 + strlen(title), line_buf);
-        strcat(out, "\n");
 
         sprintf(line_buf, "\033[1;32m%s\033[0m \033[0;90m-\033[0m \033[1;37m%s\033[0m", artist, track);
         append_centered(out, width, strlen(artist) + 3 + strlen(track), line_buf);
-        strcat(out, "\n");
 
         char p_time[32], d_time[32];
         long p_s = prog / 1000;
@@ -247,7 +265,6 @@ void render_music(int x, int y, int width) {
         }
         sprintf(line_buf + strlen(line_buf), "\033[0;90m] \033[1;32m%s \033[0;90m/ \033[1;37m%s\033[0m", p_time, d_time);
         append_centered(out, width, 1 + BAR_WIDTH + 2 + 5 + 3 + 5, line_buf);
-        strcat(out, "\n");
 
         const char *levels[] = {" ", "▂", "▃", "▄", "▅", "▆", "▇", "█"};
         line_buf[0] = '\0';
@@ -256,7 +273,6 @@ void render_music(int x, int y, int width) {
             sprintf(line_buf + strlen(line_buf), "\033[38;5;137m%s\033[0m", levels[lvl]);
         }
         append_centered(out, width, VIS_WIDTH, line_buf);
-        strcat(out, "\n");
 
         char f1[128], f2[128], f3[128];
         snprintf(f1, sizeof(f1), " %s ", l_user);
@@ -287,6 +303,8 @@ void draw_screen() {
     int cols = w.ws_col;
     int rows = w.ws_row;
 
+    printf("\033[?2026h");
+
     if (cols != last_cols || rows != last_rows) {
         printf("\033[2J");
         last_cols = cols;
@@ -309,6 +327,7 @@ void draw_screen() {
     render_music(center_x, bottom_y, col_width - 4);
     render_calendar(right_x, bottom_y, col_width - 4);
 
+    printf("\033[?2026l");
     fflush(stdout);
 }
 
