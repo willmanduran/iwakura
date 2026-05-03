@@ -115,9 +115,10 @@ void fetch_and_push_news() {
 
 int main() {
     curl_global_init(CURL_GLOBAL_DEFAULT);
+    int refresh_rate = get_refresh_rate("REFRESH_NEWS", 300);
     while (1) {
         fetch_and_push_news();
-        sleep(300);
+        sleep(refresh_rate);
     }
     curl_global_cleanup();
     return 0;
