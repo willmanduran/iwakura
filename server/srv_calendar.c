@@ -135,9 +135,10 @@ void fetch_and_push_calendar() {
 
 int main() {
     curl_global_init(CURL_GLOBAL_DEFAULT);
+    int refresh_rate = get_refresh_rate("REFRESH_CAL", 30);
     while (1) {
         fetch_and_push_calendar();
-        sleep(600);
+        sleep(refresh_rate);
     }
     curl_global_cleanup();
     return 0;
