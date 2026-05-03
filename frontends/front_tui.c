@@ -37,7 +37,6 @@ const char *digit_font[11][5] = {
 };
 
 void tui_init() {
-    setvbuf(stdout, NULL, _IOFBF, 8192);
     printf("\033[2J\033[?25l\033[?7l");
     fflush(stdout);
 }
@@ -328,8 +327,6 @@ void process_stream(char *buffer) {
         snprintf(raw_guestbook, sizeof(raw_guestbook), "%s", actual_payload + 10);
     else if (strncmp(actual_payload, "MUSIC|", 6) == 0)
         snprintf(raw_music, sizeof(raw_music), "%s", actual_payload + 6);
-
-    draw_screen();
 }
 
 int main() {
@@ -363,16 +360,25 @@ int main() {
     int line_len = 0;
 
     draw_screen();
+    int needs_redraw = 0;
 
     while ((bytes_read = recv(sock, buffer, sizeof(buffer) - 1, 0)) > 0) {
         for (int i = 0; i < bytes_read; i++) {
             if (buffer[i] == '\n' || buffer[i] == '\0') {
                 line[line_len] = '\0';
-                if (line_len > 0) process_stream(line);
+                if (line_len > 0) {
+                    process_stream(line);
+                    needs_redraw = 1;
+                }
                 line_len = 0;
             } else {
                 if (line_len < (int)sizeof(line) - 1) line[line_len++] = buffer[i];
             }
+        }
+
+        if (needs_redraw) {
+            draw_screen();
+            needs_redraw = 0;
         }
     }
     handle_shutdown(0);
