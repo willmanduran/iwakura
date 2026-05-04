@@ -236,22 +236,25 @@ void render_music(int x, int y, int width) {
     char *track = strtok(NULL, "|");
     char *prog_str = strtok(NULL, "|");
     char *dur_str = strtok(NULL, "|");
-    char *l_user = strtok(NULL, "|");
+
+    strtok(NULL, "|");
+    strtok(NULL, "|");
+
     char *l_top = strtok(NULL, "|");
     char *l_scrob = strtok(NULL, "|");
 
-    if (is_play_str && artist && track && prog_str && dur_str && l_user && l_top && l_scrob) {
+    if (is_play_str && artist && track && prog_str && dur_str && l_top && l_scrob) {
         int is_playing = atoi(is_play_str);
         long prog = atol(prog_str);
         long dur = atol(dur_str);
 
         const char* title = is_playing ? _t("L_MUSIC_PLAYING", "REPRODUCIENDO") : _t("L_MUSIC_PAUSED", "PAUSED");
         sprintf(line_buf, "\033[1;32m%s \033[0;90m── \033[1;37m%s\033[0;90m ──\033[0m", is_playing ? "►" : "■", title);
-        append_centered(out, width, 8 + strlen(title), line_buf);
+        append_centered(out, width, 8 + (int)strlen(title), line_buf);
         append_centered(out, width, 0, "");
 
         sprintf(line_buf, "\033[1;32m%s\033[0m \033[0;90m-\033[0m \033[1;37m%s\033[0m", artist, track);
-        append_centered(out, width, strlen(artist) + 3 + strlen(track), line_buf);
+        append_centered(out, width, (int)strlen(artist) + 3 + (int)strlen(track), line_buf);
         append_centered(out, width, 0, "");
 
         char p_time[32], d_time[32];
@@ -279,11 +282,10 @@ void render_music(int x, int y, int width) {
         append_centered(out, width, VIS_WIDTH, line_buf);
         append_centered(out, width, 0, "");
 
-        char f1[128], f2[128], f3[128];
-        snprintf(f1, sizeof(f1), " %s ", l_user);
-        snprintf(f3, sizeof(f3), " %s ", l_scrob);
+        char f2[128], f3[128];
+        snprintf(f3, sizeof(f3), " %.120s ", l_scrob);
 
-        int used_width = strlen(f1) + strlen(f3) + 2;
+        int used_width = (int)strlen(f3) + 4;
         int max_top_len = width - used_width - 2;
 
         if (max_top_len < 3) {
@@ -291,11 +293,11 @@ void render_music(int x, int y, int width) {
         } else if ((int)strlen(l_top) > max_top_len) {
             snprintf(f2, sizeof(f2), " %.*s... ", max_top_len - 3, l_top);
         } else {
-            snprintf(f2, sizeof(f2), " %.*s ", 120, l_top);
+            snprintf(f2, sizeof(f2), " %.120s ", l_top);
         }
 
-        int ft_vis_len = strlen(f1) + 1 + strlen(f2) + 1 + strlen(f3);
-        sprintf(line_buf, "\033[30;47m%s\033[0m \033[30;47m%s\033[0m \033[30;47m%s\033[0m", f1, f2, f3);
+        int ft_vis_len = (int)strlen(f2) + 1 + (int)strlen(f3);
+        sprintf(line_buf, "\033[30;47m%s\033[0m \033[30;47m%s\033[0m", f2, f3);
         append_centered(out, width, ft_vis_len, line_buf);
 
         tui_draw_widget(x, y, out);
